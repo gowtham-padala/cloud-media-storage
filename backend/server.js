@@ -1,29 +1,29 @@
 require('dotenv').config()
+const cors = require('cors')
 const express = require('express')
 const multer = require('multer')
 const multerS3 = require('multer-s3')
-const AWS = require('./aws-config')
+const { s3Client } = require('./aws-config')
 
 const app = express()
 const port = 3000
-
-const s3 = new AWS.S3()
+app.use(cors())
 
 const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.AWS_BUCKET_NAME,
-    acl: 'public-read',
-    metadata: function (req, file, cb) {
-      cb(null, { fieldName: file.fieldname })
-    },
-    key: function (req, file, cb) {
-      cb(null, Date.now().toString() + '-' + file.originalname)
-    }
+    storage: multerS3({
+      s3: s3Client,
+      bucket: process.env.AWS_BUCKET_NAME,
+      metadata: function (req, file, cb) {
+        cb(null, { fieldName: file.fieldname })
+      },
+      key: function (req, file, cb) {
+        cb(null, Date.now().toString() + '-' + file.originalname)
+      }
+    })
   })
-})
+  
 
-app.post('/upload', upload.single('image'), function (req, res, next) {
+app.post('/upload', upload.single('image'), function (req, res) {
   if (!req.file) {
     return res.status(400).send('No file uploaded.')
   }
@@ -31,7 +31,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
 })
 
 app.get('/', (req, res) => {
-  res.send('Hello Worldd!')
+  res.send('Hello World!')
 })
 
 app.listen(port, () => {
